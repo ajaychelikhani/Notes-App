@@ -19,7 +19,8 @@ function RegisterPage() {
     if (!fullName.trim()) newErrors.fullName = 'Full name is required'
     if (!email.trim()) newErrors.email = 'Email is required'
     else if (!/^\S+@\S+\.\S+$/.test(email)) newErrors.email = 'Enter a valid email address'
-    if (password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    if (!password.trim()) newErrors.password = 'Password is required'
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters'
     if (confirmPassword !== password) newErrors.confirmPassword = 'Passwords do not match'
     return newErrors
   }

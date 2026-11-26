@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
@@ -10,11 +10,26 @@ function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState(() =>
+    location.state?.justRegistered ? 'Account created successfully! Please log in.' : ''
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (location.state?.justRegistered) {
+      setSuccessMessage('Account created successfully! Please log in.')
+      const { justRegistered: _ignored, ...restState } = location.state
+      navigate(location.pathname, {
+        replace: true,
+        state: Object.keys(restState).length > 0 ? restState : null,
+      })
+    }
+  }, [location.state, location.pathname, navigate])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    setSuccessMessage('')
 
     if (!email || !password) {
       setError('Please enter both email and password.')
@@ -76,6 +91,12 @@ function LoginPage() {
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
             Log in to keep writing where you left off.
           </p>
+
+          {successMessage && (
+            <div className="mb-5 px-4 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-sm">
+              {successMessage}
+            </div>
+          )}
 
           {error && (
             <div className="mb-5 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm">
