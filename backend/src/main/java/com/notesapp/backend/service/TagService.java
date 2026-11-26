@@ -5,6 +5,7 @@ import com.notesapp.backend.repository.TagRepository;
 import com.notesapp.backend.security.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
 // tag filter dropdown on the frontend.
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TagService {
 
     private final TagRepository tagRepository;

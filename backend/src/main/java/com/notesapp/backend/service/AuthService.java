@@ -39,13 +39,15 @@ public class AuthService {
             throw new BadRequestException("Passwords do not match");
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             throw new DuplicateEmailException("An account with this email already exists");
         }
 
         User user = User.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
+                .fullName(request.getFullName().trim())
+                .email(normalizedEmail)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
 
@@ -65,15 +67,17 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
             );
         } catch (Exception ex) {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         String token = jwtUtil.generateToken(user.getEmail());

@@ -27,7 +27,7 @@ public class Note {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "is_favorite", nullable = false)

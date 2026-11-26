@@ -29,20 +29,20 @@ Personal Notes is a Google-Keep-style note-taking app with full user accounts. E
 
 **Backend:** Java, Spring Boot, Spring Web, Spring Data JPA, Spring Security, JWT (jjwt), BCrypt, Bean Validation
 
-**Database:** SQL Server
+**Database:** PostgreSQL (local/Docker PostgreSQL or Supabase PostgreSQL in production)
 
-**DevOps:** Docker, Docker Compose
+**DevOps:** Docker, Docker Compose, Vercel
 
 ## Architecture
 
 ```
-Browser (React SPA)
-    │  HTTP + JWT Bearer token
+Browser (React SPA on Vercel)
+    │  HTTP + JWT Bearer token (/api/*)
     ▼
-Spring Boot REST API
+Spring Boot REST API (Vercel Container Service)
     │  Spring Data JPA
     ▼
-SQL Server
+PostgreSQL (Docker locally / Supabase in production)
 ```
 
 - The frontend is a single-page app; all routing happens client-side via React Router.
@@ -128,7 +128,7 @@ personal-notes-app/
 - Node.js 18+
 - Java 17+
 - Maven (or use the included wrapper, if present)
-- SQL Server running locally, OR use Docker Compose (see below) to run it in a container
+- PostgreSQL 16+ running locally, OR use Docker Compose (see below) to run it in a container
 
 ### Backend
 ```bash
@@ -150,7 +150,7 @@ The app will be available at `http://localhost:5173`.
 
 ## Docker Setup
 
-The easiest way to run the entire stack (frontend + backend + SQL Server) is Docker Compose.
+The easiest way to run the entire stack (frontend + backend + PostgreSQL) is Docker Compose.
 
 First, create your environment file in the project root:
 ```bash
@@ -163,22 +163,44 @@ docker compose up --build
 ```
 
 This will:
-1. Start SQL Server and wait until it's healthy
-2. Create the `notesapp` database
-3. Build and start the Spring Boot backend on port `8080`
-4. Build and start the React frontend (served by Nginx) on port `5173`
+1. Start PostgreSQL 16 and wait until it's healthy (automatically creating the `notesapp` database)
+2. Build and start the Spring Boot backend on port `8080`
+3. Build and start the React frontend (served by Nginx) on port `5173`
 
 Then open `http://localhost:5173`.
 
-> Note: the SQL Server container needs at least ~2GB of RAM available to Docker. If it fails to start, check Docker Desktop's resource settings.
+## Production Deployment (Vercel + Supabase)
+
+This repository uses root `vercel.json` (Vercel Services) to host **both** the Vite React frontend and the containerized Spring Boot backend under a single Vercel project and domain, backed by **Supabase PostgreSQL**.
+
+### 1. Database — Supabase PostgreSQL
+1. Create a Supabase project and copy your **Connection Pooler** details (recommended over Direct Connection for IPv4 compatibility and PgBouncer connection pooling).
+2. Format your JDBC connection variables:
+   ```text
+   DB_URL=jdbc:postgresql://aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
+   DB_USERNAME=postgres.<your-project-ref>
+   DB_PASSWORD=<your-supabase-db-password>
+   ```
+   > Hibernate (`ddl-auto: update`) automatically creates the `users`, `categories`, `tags`, `notes`, and `note_tags` tables on first startup. After the initial deployment creates the schema, you can optionally set `DDL_AUTO=none` in Vercel to speed up backend cold starts.
+
+### 2. Frontend + Backend — Single Vercel Project
+1. Import this repository in Vercel with the **repository root** (do not set Root Directory to `frontend`; root `vercel.json` routes `/api/*` to `backend/Dockerfile` and `/*` to `frontend`).
+2. Add environment variables in Vercel Project Settings:
+   - `DB_URL` — Supabase Pooler JDBC URL from step 1 (`?sslmode=require&prepareThreshold=0`)
+   - `DB_USERNAME` — Supabase pooler username (`postgres.<your-project-ref>`)
+   - `DB_PASSWORD` — Supabase database password
+   - `JWT_SECRET` — random string of at least 32 characters (`openssl rand -base64 32`)
+   - `FRONTEND_URL` — your Vercel URL (e.g. `https://your-app.vercel.app,https://*.vercel.app`)
+3. `VITE_API_URL` does not need to be set in production because `frontend/src/services/api.js` automatically uses `/api` on the same Vercel origin.
+4. `frontend/vercel.json` handles SPA client-side routing fallback to `/index.html` on page refresh.
 
 ## Environment Variables
 
 **Backend** (`backend/.env.example`):
 ```
-DB_URL=jdbc:sqlserver://localhost:1433;databaseName=notesapp;encrypt=true;trustServerCertificate=true
-DB_USERNAME=sa
-DB_PASSWORD=YourStrong@Passw0rd
+DB_URL=jdbc:postgresql://localhost:5432/notesapp
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
 JWT_SECRET=change-this-to-a-long-random-secret-before-deploying
 FRONTEND_URL=http://localhost:5173
 ```

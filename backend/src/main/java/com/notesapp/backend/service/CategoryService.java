@@ -18,6 +18,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -32,6 +33,7 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         User user = currentUserProvider.getCurrentUser();
         Category category = Category.builder()
@@ -41,6 +43,7 @@ public class CategoryService {
         return toResponse(categoryRepository.save(category));
     }
 
+    @Transactional
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = getOwnedCategory(id);
         category.setName(request.getName());

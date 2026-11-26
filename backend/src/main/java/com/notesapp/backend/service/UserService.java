@@ -10,9 +10,11 @@ import com.notesapp.backend.security.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -24,6 +26,7 @@ public class UserService {
         return authService.toUserResponse(currentUserProvider.getCurrentUser());
     }
 
+    @Transactional
     public UserResponse updateProfile(UpdateProfileRequest request) {
         User user = currentUserProvider.getCurrentUser();
         user.setFullName(request.getFullName());
@@ -31,6 +34,7 @@ public class UserService {
         return authService.toUserResponse(saved);
     }
 
+    @Transactional
     public void changePassword(ChangePasswordRequest request) {
         User user = currentUserProvider.getCurrentUser();
 

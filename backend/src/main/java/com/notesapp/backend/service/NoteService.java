@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class NoteService {
 
     private final NoteRepository noteRepository;
@@ -134,12 +135,14 @@ public class NoteService {
     }
 
     // Normal delete: move to Trash (soft delete). Nothing is removed from the DB yet.
+    @Transactional
     public void moveToTrash(Long id) {
         Note note = getOwnedNote(id);
         note.setDeleted(true);
         noteRepository.save(note);
     }
 
+    @Transactional
     public NoteResponse restoreNote(Long id) {
         Note note = getOwnedNote(id);
         note.setDeleted(false);
@@ -148,23 +151,27 @@ public class NoteService {
 
     // Permanent delete: only ever called from the Trash view — actually
     // removes the row from the database. Cannot be undone.
+    @Transactional
     public void permanentlyDelete(Long id) {
         Note note = getOwnedNote(id);
         noteRepository.delete(note);
     }
 
+    @Transactional
     public NoteResponse toggleFavorite(Long id) {
         Note note = getOwnedNote(id);
         note.setFavorite(!note.isFavorite());
         return toResponse(noteRepository.save(note));
     }
 
+    @Transactional
     public NoteResponse togglePin(Long id) {
         Note note = getOwnedNote(id);
         note.setPinned(!note.isPinned());
         return toResponse(noteRepository.save(note));
     }
 
+    @Transactional
     public NoteResponse toggleArchive(Long id) {
         Note note = getOwnedNote(id);
         note.setArchived(!note.isArchived());
